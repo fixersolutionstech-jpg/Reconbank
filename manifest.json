@@ -2,7 +2,7 @@
   "name": "ReconBank AI",
   "short_name": "ReconBank",
   "description": "Reconciliação bancária autónoma com IA",
-  "start_url": /Reconbank/,
+  "start_url": "/Reconbank/",
   "scope": "/Reconbank/",
   "display": "standalone",
   "background_color": "#0A0F0D",
