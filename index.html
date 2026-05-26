@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#F7F9FC"/>
+<meta name="description" content="Reconciliação bancária com inteligência artificial"/>
+<title>ReconBank AI</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<style>
+:root {
+  --bg:        #F7F9FC;
+  --white:     #FFFFFF;
+  --surface:   #EEF2F7;
+  --border:    #DDE3EC;
+  --blue:      #1A56DB;
+  --blue-dk:   #1346C0;
+  --blue-lt:   #EBF0FF;
+  --blue-mid:  #C7D6FA;
+  --green:     #0E9F6E;
+  --green-lt:  #ECFDF5;
+  --amber:     #D97706;
+  --amber-lt:  #FFFBEB;
+  --red:       #E02424;
+  --red-lt:    #FEF2F2;
+  --text:      #111827;
+  --text2:     #4B5563;
+  --text3:     #9CA3AF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+  --r:         8px;
+  --r2:        12px;
+  --r3:        16px;
+  --sans:      'Outfit', sans-serif;
+  --mono:      'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100dvh;
+}
+
+/* ── LAYOUT ── */
+.app { max-width: 640px; margin: 0 auto; padding: 32px 20px 80px; }
+
+/* ── HEADER ── */
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 40px;
+}
+.hdr-brand { display: flex; align-items: center; gap: 12px; }
+.hdr-logo {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(26,86,219,.30);
+}
+.hdr-logo svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hdr-name { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
+.hdr-sub  { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.hdr-badge {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  padding: 5px 12px; border-radius: 99px;
+  background: var(--green-lt); color: var(--green);
+  display: flex; align-items: center; gap: 6px; border: 1px solid #A7F3D0;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── SECTION TITLE ── */
+.sec-title {
+  font-size: 12px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 10px; margin-top: 28px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* ── DROP ZONE ── */
+.drop {
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .18s;
+  border: 2px dashed var(--border);
+  border-radius: var(--r2);
+  margin: 16px;
+  background: var(--bg);
+}
+.drop:hover, .drop.over {
+  border-color: var(--blue);
+  background: var(--blue-lt);
+}
+.drop-icon-wrap {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: var(--blue-lt); margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .18s;
+}
+.drop:hover .drop-icon-wrap, .drop.over .drop-icon-wrap { background: var(--blue-mid); }
+.drop-icon-wrap svg { width: 26px; height: 26px; fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.drop-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+.drop-hint  { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+.drop-chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.chip {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 9px; border-radius: 6px;
+  background: var(--surface); color: var(--text3);
+  border: 1px solid var(--border);
+}
+#fi { display: none; }
+
+/* ── FILE LIST ── */
+.flist { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.fitem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--r);
+  background: var(--bg); border: 1px solid var(--border);
+  animation: fadeUp .2s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+.fitem-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--blue-lt); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.fitem-icon svg { width: 18px; height: 18px; fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fitem-body { flex: 1; min-width: 0; }
+.fitem-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fitem-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.fitem-rm {
+  background: none; border: none; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3); transition: all .15s;
+}
+.fitem-rm:hover { background: var(--red-lt); color: var(--red); }
+.fitem-rm svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* ── CONFIG ── */
+.cfg-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.cfg-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--text2); }
+.field input {
+  height: 42px; padding: 0 14px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--r); color: var(--text);
+  font-family: var(--sans); font-size: 14px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+.field input::placeholder { color: var(--text3); }
+.field-full { grid-column: span 2; }
+.url-wrap { display: flex; gap: 8px; }
+.url-wrap input { flex: 1; }
+.btn-test {
+  height: 42px; padding: 0 16px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  background: var(--white); color: var(--text2);
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-test:hover { border-color: var(--blue); color: var(--blue); }
+.btn-test svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* ── PROGRESS ── */
+.prog-body { padding: 20px; }
+.steps { display: flex; gap: 0; margin-bottom: 20px; }
+.step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+.step + .step::before {
+  content: ''; position: absolute;
+  top: 16px; right: 50%; left: -50%; height: 2px;
+  background: var(--border); z-index: 0; transition: background .3s;
+}
+.step.done + .step::before, .step.active + .step::before { background: var(--blue); }
+.sdot {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border); background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1; transition: all .3s;
+}
+.sdot svg { width: 14px; height: 14px; fill: none; stroke: var(--text3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .3s; }
+.step.active .sdot { border-color: var(--blue); background: var(--blue-lt); animation: stepPulse 1.2s infinite; }
+.step.active .sdot svg { stroke: var(--blue); }
+.step.done .sdot { border-color: var(--blue); background: var(--blue); }
+.step.done .sdot svg { stroke: #fff; }
+@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(26,86,219,.2)} 50%{box-shadow:0 0 0 6px rgba(26,86,219,.0)} }
+.slbl { font-size: 11px; font-weight: 500; color: var(--text3); transition: color .3s; }
+.step.active .slbl { color: var(--blue); }
+.step.done   .slbl { color: var(--text2); }
+
+.pbar-wrap { display: none; }
+.pbar-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.pbar-info span:last-child { font-family: var(--mono); }
+.pbar { height: 4px; background: var(--surface); border-radius: 99px; overflow: hidden; }
+.pfill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), #5B8EFF); border-radius: 99px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+
+.logbox {
+  display: none; margin-top: 14px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 10px 14px; max-height: 88px; overflow-y: auto;
+  font-family: var(--mono); font-size: 11.5px; color: var(--text3);
+}
+.logbox::-webkit-scrollbar { width: 3px; }
+.logbox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.log-line { padding: 1px 0; }
+.log-ok   { color: var(--green); }
+.log-err  { color: var(--red); }
+.log-warn { color: var(--amber); }
+
+/* ── BOTÃO PRINCIPAL ── */
+.btn-run {
+  width: 100%; height: 52px; margin-top: 20px;
+  border: none; border-radius: var(--r2);
+  background: var(--blue);
+  color: #fff; font-family: var(--sans); font-size: 15px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 2px 12px rgba(26,86,219,.35);
+  transition: all .18s;
+}
+.btn-run:hover:not(:disabled) { background: var(--blue-dk); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,86,219,.40); }
+.btn-run:active:not(:disabled) { transform: translateY(0); }
+.btn-run:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-run svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.spin { animation: spin .7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── RESULTADO ── */
+.result-wrap { display: none; animation: fadeUp .35s ease; }
+
+.result-banner {
+  background: var(--green-lt);
+  border: 1px solid #A7F3D0;
+  border-radius: var(--r3);
+  padding: 20px 24px;
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 12px;
+}
+.result-banner-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.result-banner-icon svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.result-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.result-sub   { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+.kpi {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 16px; text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-val { font-size: 28px; font-weight: 700; line-height: 1; }
+.kpi-val.c-green { color: var(--green); }
+.kpi-val.c-red   { color: var(--red); }
+.kpi-val.c-amber { color: var(--amber); }
+.kpi-lbl { font-size: 12px; font-weight: 500; color: var(--text3); margin-top: 6px; }
+
+.dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-dl {
+  height: 46px; border-radius: var(--r);
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .15s;
+}
+.btn-dl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-dl-pdf  { background: var(--red);   color: #fff; border: none; box-shadow: 0 2px 8px rgba(224,36,36,.25); }
+.btn-dl-pdf:hover  { background: #c71e1e; }
+.btn-dl-xlsx { background: var(--green); color: #fff; border: none; box-shadow: 0 2px 8px rgba(14,159,110,.25); }
+.btn-dl-xlsx:hover { background: #0a8a5f; }
+.btn-dl-doc  { background: var(--white); color: var(--text2); border: 1.5px solid var(--border); }
+.btn-dl-doc:hover  { border-color: var(--blue); color: var(--blue); }
+.btn-dl-share{ background: var(--white); color: var(--text2); border: 1.5px solid var(--border); }
+.btn-dl-share:hover{ border-color: var(--blue); color: var(--blue); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--text); color: #fff;
+  border-radius: 99px; padding: 10px 20px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow-lg); white-space: nowrap; z-index: 999;
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+.toast.ok    { background: var(--green); }
+.toast.warn  { background: var(--amber); }
+.toast.err   { background: var(--red); }
+.toast.show  { transform: translateX(-50%) translateY(0); }
+
+/* ── MOBILE ── */
+@media (max-width: 480px) {
+  .app { padding: 24px 16px 60px; }
+  .hdr-badge span:not(.dot) { display: none; }
+  .kpi-row { gap: 8px; }
+  .kpi-val { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-logo">
+        <!-- arrows-diff icon -->
+        <svg viewBox="0 0 24 24"><path d="M7 16H3m0 0 4-4M3 16l4 4M17 8h4m0 0-4-4m4 4-4 4"/></svg>
+      </div>
+      <div>
+        <div class="hdr-name">ReconBank AI</div>
+        <div class="hdr-sub">Fixer Solutions · v1.1</div>
+      </div>
+    </div>
+    <div class="hdr-badge"><span class="dot"></span> IA Activa</div>
+  </header>
+
+  <!-- PASSO 1: DOCUMENTOS -->
+  <div class="sec-title">1 — Carregar Documentos</div>
+  <div class="card">
+    <div class="drop" id="dz" onclick="document.getElementById('fi').click()">
+      <div class="drop-icon-wrap">
+        <!-- upload icon -->
+        <svg viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12V4m0 0L8 8m4-4 4 4"/></svg>
+      </div>
+      <div class="drop-title">Arraste os ficheiros ou clique para seleccionar</div>
+      <div class="drop-hint">Extracto bancário + lançamentos contabilísticos</div>
+      <div class="drop-chips">
+        <span class="chip">PDF</span>
+        <span class="chip">XLSX</span>
+        <span class="chip">CSV</span>
+        <span class="chip">OFX</span>
+      </div>
+    </div>
+    <input type="file" id="fi" multiple accept=".pdf,.xlsx,.csv,.ofx,.xml,.txt" onchange="onFiles(this.files)"/>
+    <div class="flist" id="flist"></div>
+  </div>
+
+  <!-- PASSO 2: CONFIGURAÇÃO -->
+  <div class="sec-title">2 — Configuração</div>
+  <div class="card">
+    <div class="cfg-body">
+      <div class="cfg-row">
+        <div class="field">
+          <label>Nome da Empresa</label>
+          <input id="empresa" type="text" placeholder="Ex: Acme, Lda"/>
+        </div>
+        <div class="field">
+          <label>Período</label>
+          <input id="periodo" type="month"/>
+        </div>
+      </div>
+      <div class="field field-full">
+        <label>URL do Google Apps Script</label>
+        <div class="url-wrap">
+          <input id="gas-url" type="url" placeholder="https://script.google.com/macros/s/.../exec"/>
+          <button class="btn-test" onclick="testarGAS()">
+            <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Testar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 3: PROCESSAMENTO -->
+  <div class="sec-title">3 — Processamento</div>
+  <div class="card">
+    <div class="prog-body">
+      <div class="steps">
+        <div class="step" id="s1">
+          <div class="sdot"><svg viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0-12L8 8m4-4 4 4"/></svg></div>
+          <div class="slbl">Ficheiros</div>
+        </div>
+        <div class="step" id="s2">
+          <div class="sdot"><svg viewBox="0 0 24 24"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-4.9-6H7a4 4 0 00-4 4z"/></svg></div>
+          <div class="slbl">Drive</div>
+        </div>
+        <div class="step" id="s3">
+          <div class="sdot"><svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m1.636 6.364.707-.707M12 20v1M7.05 5.05l.707.707M16.95 16.95l.707.707m-4.45-4.45a3 3 0 11-4.243 0"/></svg></div>
+          <div class="slbl">Gemini IA</div>
+        </div>
+        <div class="step" id="s4">
+          <div class="sdot"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg></div>
+          <div class="slbl">Relatório</div>
+        </div>
+      </div>
+
+      <div class="pbar-wrap" id="pbar-wrap">
+        <div class="pbar-info">
+          <span id="pbar-label">A aguardar...</span>
+          <span id="pbar-pct">0%</span>
+        </div>
+        <div class="pbar"><div class="pfill" id="pfill"></div></div>
+      </div>
+      <div class="logbox" id="logbox"></div>
+    </div>
+  </div>
+
+  <!-- BOTÃO PRINCIPAL -->
+  <button class="btn-run" id="btn-run" onclick="iniciar()" disabled>
+    <svg id="run-icon" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+    <span id="run-label">Processar Reconciliação</span>
+  </button>
+
+  <!-- RESULTADO -->
+  <div class="result-wrap" id="result-wrap">
+    <div class="sec-title" style="margin-top:28px">4 — Resultado</div>
+
+    <div class="result-banner">
+      <div class="result-banner-icon">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div>
+        <div class="result-title">Reconciliação concluída</div>
+        <div class="result-sub" id="res-sub">— transacções analisadas</div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-val c-green" id="k-ok">0</div>
+        <div class="kpi-lbl">Conciliados</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val c-red" id="k-dv">0</div>
+        <div class="kpi-lbl">Divergências</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val c-amber" id="k-pd">0</div>
+        <div class="kpi-lbl">Pendentes</div>
+      </div>
+    </div>
+
+    <div class="dl-grid">
+      <button class="btn-dl btn-dl-pdf"   onclick="dlPDF()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Descarregar PDF
+      </button>
+      <button class="btn-dl btn-dl-xlsx"  onclick="dlExcel()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="14" y2="9"/></svg>
+        Descarregar Excel
+      </button>
+      <button class="btn-dl btn-dl-doc"   onclick="dlDoc()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Google Doc
+      </button>
+      <button class="btn-dl btn-dl-share" onclick="partilhar()">
+        <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Partilhar
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let files = [];
+let gasResult = null;
+const GAS_URL_KEY = 'reconbank_gas_url';
+const EMP_KEY     = 'reconbank_empresa';
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  const saved = localStorage.getItem(GAS_URL_KEY);
+  if (saved) document.getElementById('gas-url').value = saved;
+  const emp = localStorage.getItem(EMP_KEY);
+  if (emp) document.getElementById('empresa').value = emp;
+  const now = new Date();
+  document.getElementById('periodo').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+});
+
+// ── DROP ZONE ──
+const dz = document.getElementById('dz');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); onFiles(e.dataTransfer.files); });
+
+function onFiles(newFiles) {
+  [...newFiles].forEach(f => files.push(f));
+  renderFiles(); checkReady();
+}
+
+function renderFiles() {
+  const list = document.getElementById('flist');
+  list.innerHTML = '';
+  files.forEach((f, i) => {
+    const ext = f.name.split('.').pop().toUpperCase();
+    const sz  = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : Math.round(f.size/1024)+'KB';
+    const d   = document.createElement('div');
+    d.className = 'fitem';
+    d.innerHTML = `
+      <div class="fitem-icon">
+        <svg viewBox="0 0 24 24"><path fill="none" stroke="#1A56DB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline fill="none" stroke="#1A56DB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="fitem-body">
+        <div class="fitem-name">${f.name}</div>
+        <div class="fitem-meta">${ext} · ${sz}</div>
+      </div>
+      <button class="fitem-rm" onclick="removeFile(${i})" title="Remover">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    list.appendChild(d);
+  });
+}
+
+function removeFile(i) { files.splice(i,1); renderFiles(); checkReady(); }
+function checkReady() {
+  document.getElementById('btn-run').disabled = files.length === 0;
+}
+
+// ── TESTAR GAS ──
+async function testarGAS() {
+  const url = document.getElementById('gas-url').value.trim();
+  if (!url) { toast('Cola o URL do GAS primeiro', 'warn'); return; }
+  log('A testar ligação...');
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ teste: true })
+    });
+    const j = await r.json();
+    if (j.ok) { log('GAS ligado e operacional ✓', 'ok'); toast('GAS ligado!', 'ok'); }
+    else log('GAS respondeu: ' + (j.erro||'ok'), 'warn');
+  } catch(e) {
+    log('Erro: ' + e.message, 'err');
+    toast('Verifica o URL do GAS', 'warn');
+  }
+}
+
+// ── PROCESSAR ──
+async function iniciar() {
+  const url     = document.getElementById('gas-url').value.trim();
+  const empresa = document.getElementById('empresa').value.trim() || 'Empresa';
+  const periodo = document.getElementById('periodo').value;
+
+  localStorage.setItem(GAS_URL_KEY, url);
+  localStorage.setItem(EMP_KEY, empresa);
+
+  gasResult = null;
+  document.getElementById('result-wrap').style.display = 'none';
+  document.getElementById('pbar-wrap').style.display = 'block';
+  document.getElementById('logbox').style.display = 'block';
+  document.getElementById('logbox').innerHTML = '';
+  ['s1','s2','s3','s4'].forEach(id => setStep(id, ''));
+  setBtnState(true);
+
+  const t0 = Date.now();
+
+  try {
+    setStep('s1','active'); prog(10, 'A preparar ficheiros...');
+    log('A codificar ' + files.length + ' ficheiro(s)...');
+    const arquivos = await Promise.all(files.map(toBase64));
+    setStep('s1','done'); log('Ficheiros prontos ✓', 'ok');
+
+    if (!url) {
+      await demoFlow(empresa, periodo);
+    } else {
+      setStep('s2','active'); prog(25, 'A enviar para o Drive...');
+      log('A enviar para o servidor...');
+
+      const payload = { empresa, periodo, arquivos };
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      let data;
+      try { data = await resp.json(); }
+      catch(je) { throw new Error('Resposta inválida do servidor'); }
+      if (!data.ok) throw new Error(data.erro || 'Erro no servidor');
+
+      setStep('s2','done'); log('Ficheiros guardados ✓', 'ok');
+      setStep('s3','active'); prog(65, 'Gemini IA a analisar...');
+      log('IA a processar a reconciliação ✓', 'ok');
+      setStep('s3','done');
+      setStep('s4','active'); prog(85, 'A gerar relatórios...');
+      log('Relatórios gerados ✓', 'ok');
+      setStep('s4','done'); prog(100, 'Concluído!');
+
+      const r = data.data.resumo || {};
+      mostrarResultado(r, data.data, Date.now()-t0);
+    }
+
+  } catch(e) {
+    log('Erro: ' + e.message, 'err');
+    toast(e.message, 'err');
+    prog(0, 'Erro');
+  } finally {
+    setBtnState(false);
+  }
+}
+
+async function demoFlow(empresa, periodo) {
+  log('Modo demonstração (sem GAS configurado)...', 'warn');
+  setStep('s2','active'); prog(30, 'A simular envio...');
+  await delay(800);
+  setStep('s2','done'); setStep('s3','active'); prog(60, 'Gemini IA a analisar...');
+  log('IA a extrair transacções...'); await delay(1000);
+  log('IA a cruzar lançamentos...', 'ok'); await delay(800);
+  setStep('s3','done'); setStep('s4','active'); prog(85, 'A gerar relatórios...');
+  await delay(600); setStep('s4','done'); prog(100, 'Demo concluído!');
+  mostrarResultado({ totalTransacoes:152, conciliados:138, divergencias:9, pendentes:5 }, null, 3200);
+}
+
+async function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res({ nome: file.name, tipo: file.type, conteudo: r.result.split(',')[1] });
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function mostrarResultado(resumo, raw, ms) {
+  const total = (resumo.conciliados||0) + (resumo.divergencias||0) + (resumo.pendentes||0);
+  document.getElementById('k-ok').textContent = resumo.conciliados  || 0;
+  document.getElementById('k-dv').textContent = resumo.divergencias || 0;
+  document.getElementById('k-pd').textContent = resumo.pendentes    || 0;
+  document.getElementById('res-sub').textContent = `${total} transacções analisadas · ${(ms/1000).toFixed(1)}s`;
+  gasResult = raw;
+  document.getElementById('result-wrap').style.display = 'block';
+  document.getElementById('result-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── DOWNLOADS ──
+function dlPDF() {
+  if (gasResult && gasResult.pdfUrl) {
+    window.open(gasResult.pdfUrl, '_blank');
+  } else {
+    toast('Sem PDF — conecta o GAS primeiro', 'warn');
+  }
+}
+
+function dlExcel() {
+  if (gasResult && gasResult.xlsxUrl) {
+    window.open(gasResult.xlsxUrl, '_blank');
+  } else if (gasResult && gasResult.sheetUrl) {
+    window.open(gasResult.sheetUrl, '_blank');
+  } else {
+    toast('Sem Excel — conecta o GAS primeiro', 'warn');
+  }
+}
+
+function dlDoc() {
+  if (gasResult && gasResult.docUrl) {
+    window.open(gasResult.docUrl, '_blank');
+  } else {
+    toast('Sem documento — conecta o GAS primeiro', 'warn');
+  }
+}
+
+function partilhar() {
+  if (navigator.share) {
+    navigator.share({ title: 'ReconBank AI', text: 'Relatório de reconciliação bancária', url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    toast('Link copiado!');
+  }
+}
+
+// ── UI HELPERS ──
+function setStep(id, state) {
+  document.getElementById(id).className = 'step' + (state ? ' '+state : '');
+}
+function prog(pct, label) {
+  document.getElementById('pfill').style.width = pct+'%';
+  document.getElementById('pbar-pct').textContent = pct+'%';
+  document.getElementById('pbar-label').textContent = label;
+}
+function log(msg, cls='') {
+  const box = document.getElementById('logbox');
+  const d = document.createElement('div');
+  d.className = 'log-line' + (cls ? ' log-'+cls : '');
+  d.textContent = new Date().toLocaleTimeString('pt') + '  ' + msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function setBtnState(loading) {
+  const btn = document.getElementById('btn-run');
+  const ico = document.getElementById('run-icon');
+  const lbl = document.getElementById('run-label');
+  btn.disabled = loading;
+  if (loading) {
+    ico.innerHTML = '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>';
+    ico.classList.add('spin');
+    lbl.textContent = 'A processar...';
+  } else {
+    ico.innerHTML = '<path d="M5 3l14 9-14 9V3z"/>';
+    ico.classList.remove('spin');
+    lbl.textContent = 'Processar Reconciliação';
+    checkReady();
+  }
+}
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
