@@ -1,127 +1,167 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt" class="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta name="theme-color" content="#F7F9FC"/>
+<meta name="theme-color" content="#F0FAF1"/>
 <meta name="description" content="Reconciliação bancária com inteligência artificial"/>
 <title>ReconBank AI</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Outfit', 'sans-serif'],
+          mono: ['DM Mono', 'monospace'],
+        },
+        colors: {
+          ink:     '#F0FAF1',
+          panel:   '#FFFFFF',
+          panel2:  '#E6F6EA',
+          line:    '#CFEAD6',
+          line2:   '#B2DCBD',
+          brand:   '#F97316',
+          brandlt: '#FFEAD9',
+          ok:      '#16A34A',
+          warn:    '#D97706',
+          danger:  '#DC2626',
+           tx:      '#0E2A18',
+          tx2:     '#3F6B4E',
+          tx3:     '#6E9A7C',
+        },
+      },
+    },
+  }
+</script>
 
 <style>
 :root {
-  --bg:        #F7F9FC;
+  --bg:        #F0FAF1;
   --white:     #FFFFFF;
-  --surface:   #EEF2F7;
-  --border:    #DDE3EC;
-  --blue:      #1A56DB;
-  --blue-dk:   #1346C0;
-  --blue-lt:   #EBF0FF;
-  --blue-mid:  #C7D6FA;
-  --green:     #0E9F6E;
-  --green-lt:  #ECFDF5;
+  --surface:   #E6F6EA;
+  --border:    #CFEAD6;
+  --blue:      #F97316;
+  --blue-dk:   #ea580c;
+  --blue-lt:   #FFEAD9;
+  --blue-mid:  #FFD9BD;
+  --green:     #16A34A;
+  --green-lt:  #DCFCE7;
   --amber:     #D97706;
-  --amber-lt:  #FFFBEB;
-  --red:       #E02424;
-  --red-lt:    #FEF2F2;
-  --text:      #111827;
-  --text2:     #4B5563;
-  --text3:     #9CA3AF;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
-  --r:         8px;
-  --r2:        12px;
-  --r3:        16px;
+  --amber-lt:  #FEF3C7;
+  --red:       #DC2626;
+  --red-lt:    #FEE2E2;
+  --text:      #0E2A18;
+  --text2:     #3F6B4E;
+  --text3:     #6E9A7C;
+  --shadow-sm: 0 1px 3px rgba(30,90,50,.08);
+  --shadow-md: 0 8px 24px rgba(30,100,55,.10);
+  --shadow-lg: 0 18px 50px rgba(30,100,55,.16);
+  --r:         10px;
+  --r2:        14px;
+  --r3:        18px;
   --sans:      'Outfit', sans-serif;
   --mono:      'DM Mono', monospace;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; }
 html { font-size: 16px; }
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
   min-height: 100dvh;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+/* animated aurora background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 38% at 22% 28%, rgba(22,163,74,.22), transparent 60%),
+    radial-gradient(36% 34% at 80% 18%, rgba(16,185,129,.18), transparent 60%),
+    radial-gradient(44% 40% at 70% 82%, rgba(132,204,22,.16), transparent 62%),
+    radial-gradient(34% 32% at 14% 78%, rgba(45,212,191,.15), transparent 60%);
+  background-repeat: no-repeat;
+  filter: blur(14px);
+  animation: auroraDrift 22s ease-in-out infinite alternate;
+}
+@keyframes auroraDrift {
+  0%   { transform: translate3d(0,0,0) scale(1)    rotate(0deg); }
+  50%  { transform: translate3d(2.5%,-2%,0) scale(1.12) rotate(4deg); }
+  100% { transform: translate3d(-2.5%,2.5%,0) scale(1.06) rotate(-4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
 }
 
-/* ── LAYOUT ── */
-.app { max-width: 640px; margin: 0 auto; padding: 32px 20px 80px; }
+::selection { background: rgba(249,115,22,.40); }
 
-/* ── HEADER ── */
-.hdr {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 40px;
-}
-.hdr-brand { display: flex; align-items: center; gap: 12px; }
-.hdr-logo {
-  width: 42px; height: 42px; border-radius: 10px;
-  background: var(--blue);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(26,86,219,.30);
-}
-.hdr-logo svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.hdr-name { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
-.hdr-sub  { font-size: 12px; color: var(--text3); margin-top: 1px; }
-.hdr-badge {
-  font-family: var(--mono); font-size: 11px; font-weight: 500;
-  padding: 5px 12px; border-radius: 99px;
-  background: var(--green-lt); color: var(--green);
-  display: flex; align-items: center; gap: 6px; border: 1px solid #A7F3D0;
-}
-.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+/* ── ANIMATIONS ── */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.45)} 50%{box-shadow:0 0 0 7px rgba(249,115,22,0)} }
+.spin { animation: spin .7s linear infinite; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 2s infinite; }
 
-/* ── SECTION TITLE ── */
-.sec-title {
-  font-size: 12px; font-weight: 600; color: var(--text3);
-  text-transform: uppercase; letter-spacing: .08em;
-  margin-bottom: 10px; margin-top: 28px;
-}
-
-/* ── CARD ── */
+/* ── CARD GLASS ── */
 .card {
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--r3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
+}
+
+/* ── SECTION TITLE ── */
+.sec-title {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 12px; margin-top: 30px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-title::before {
+  content: ''; width: 18px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--blue), transparent);
 }
 
 /* ── DROP ZONE ── */
 .drop {
-  padding: 40px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: all .18s;
-  border: 2px dashed var(--border);
-  border-radius: var(--r2);
-  margin: 16px;
-  background: var(--bg);
+  padding: 44px 24px; text-align: center; cursor: pointer;
+  transition: all .2s; border: 1.5px dashed var(--border);
+  border-radius: var(--r2); margin: 16px; background: var(--surface);
 }
 .drop:hover, .drop.over {
   border-color: var(--blue);
   background: var(--blue-lt);
+  box-shadow: inset 0 0 0 1px rgba(249,115,22,.30);
 }
 .drop-icon-wrap {
-  width: 56px; height: 56px; border-radius: 14px;
-  background: var(--blue-lt); margin: 0 auto 16px;
+  width: 60px; height: 60px; border-radius: 16px;
+  background: var(--blue-lt); margin: 0 auto 18px;
   display: flex; align-items: center; justify-content: center;
-  transition: background .18s;
+  transition: all .2s; border: 1px solid var(--line2);
 }
-.drop:hover .drop-icon-wrap, .drop.over .drop-icon-wrap { background: var(--blue-mid); }
-.drop-icon-wrap svg { width: 26px; height: 26px; fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.drop-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
-.drop-hint  { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
-.drop-chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.drop:hover .drop-icon-wrap, .drop.over .drop-icon-wrap { background: var(--blue-mid); transform: translateY(-2px); }
+.drop-icon-wrap svg { width: 28px; height: 28px; fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.drop-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.drop-hint  { font-size: 13px; color: var(--text2); margin-bottom: 18px; }
+.drop-chips { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; }
 .chip {
   font-family: var(--mono); font-size: 11px;
-  padding: 3px 9px; border-radius: 6px;
-  background: var(--surface); color: var(--text3);
+  padding: 4px 10px; border-radius: 7px;
+  background: var(--surface); color: var(--text2);
   border: 1px solid var(--border);
 }
 #fi { display: none; }
@@ -131,206 +171,132 @@ body {
 .fitem {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; border-radius: var(--r);
-  background: var(--bg); border: 1px solid var(--border);
+  background: var(--surface); border: 1px solid var(--border);
   animation: fadeUp .2s ease;
 }
-@keyframes fadeUp { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+.fitem:hover { border-color: var(--line2); }
 .fitem-icon {
-  width: 36px; height: 36px; border-radius: 8px;
+  width: 38px; height: 38px; border-radius: 9px;
   background: var(--blue-lt); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border: 1px solid var(--line2);
 }
-.fitem-icon svg { width: 18px; height: 18px; fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fitem-icon svg { width: 18px; height: 18px; }
+.fitem-icon svg path, .fitem-icon svg polyline { stroke: var(--blue) !important; }
 .fitem-body { flex: 1; min-width: 0; }
-.fitem-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fitem-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.fitem-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fitem-meta { font-size: 12px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
 .fitem-rm {
   background: none; border: none; cursor: pointer;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 30px; height: 30px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   color: var(--text3); transition: all .15s;
 }
 .fitem-rm:hover { background: var(--red-lt); color: var(--red); }
 .fitem-rm svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
-/* ── CONFIG ── */
-.cfg-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-.cfg-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 13px; font-weight: 500; color: var(--text2); }
+/* ── CONFIG FIELDS ── */
 .field input {
-  height: 42px; padding: 0 14px;
-  background: var(--bg); border: 1.5px solid var(--border);
+  width: 100%; height: 46px; padding: 0 14px;
+  background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--r); color: var(--text);
   font-family: var(--sans); font-size: 14px; outline: none;
   transition: border-color .15s, box-shadow .15s;
 }
-.field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+.field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(249,115,22,.22); }
 .field input::placeholder { color: var(--text3); }
-.field-full { grid-column: span 2; }
-.url-wrap { display: flex; gap: 8px; }
-.url-wrap input { flex: 1; }
-.btn-test {
-  height: 42px; padding: 0 16px;
-  border: 1.5px solid var(--border); border-radius: var(--r);
-  background: var(--white); color: var(--text2);
-  font-family: var(--sans); font-size: 13px; font-weight: 500;
-  cursor: pointer; white-space: nowrap; transition: all .15s;
-  display: flex; align-items: center; gap: 6px;
-}
-.btn-test:hover { border-color: var(--blue); color: var(--blue); }
-.btn-test svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.field input[type="month"] { color-scheme: light; }
 
-/* ── PROGRESS ── */
-.prog-body { padding: 20px; }
+/* ── PROGRESS STEPS ── */
 .steps { display: flex; gap: 0; margin-bottom: 20px; }
-.step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+.step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
 .step + .step::before {
   content: ''; position: absolute;
-  top: 16px; right: 50%; left: -50%; height: 2px;
+  top: 17px; right: 50%; left: -50%; height: 2px;
   background: var(--border); z-index: 0; transition: background .3s;
 }
 .step.done + .step::before, .step.active + .step::before { background: var(--blue); }
 .sdot {
-  width: 32px; height: 32px; border-radius: 50%;
-  border: 2px solid var(--border); background: var(--white);
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid var(--border); background: var(--surface);
   display: flex; align-items: center; justify-content: center;
   position: relative; z-index: 1; transition: all .3s;
 }
-.sdot svg { width: 14px; height: 14px; fill: none; stroke: var(--text3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .3s; }
-.step.active .sdot { border-color: var(--blue); background: var(--blue-lt); animation: stepPulse 1.2s infinite; }
+.sdot svg { width: 15px; height: 15px; fill: none; stroke: var(--text3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .3s; }
+.step.active .sdot { border-color: var(--blue); background: var(--blue-lt); animation: stepPulse 1.3s infinite; }
 .step.active .sdot svg { stroke: var(--blue); }
-.step.done .sdot { border-color: var(--blue); background: var(--blue); }
+.step.done .sdot { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px rgba(249,115,22,.6); }
 .step.done .sdot svg { stroke: #fff; }
-@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(26,86,219,.2)} 50%{box-shadow:0 0 0 6px rgba(26,86,219,.0)} }
 .slbl { font-size: 11px; font-weight: 500; color: var(--text3); transition: color .3s; }
 .step.active .slbl { color: var(--blue); }
 .step.done   .slbl { color: var(--text2); }
 
+/* ── PROGRESS BAR ── */
 .pbar-wrap { display: none; }
-.pbar-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
-.pbar-info span:last-child { font-family: var(--mono); }
-.pbar { height: 4px; background: var(--surface); border-radius: 99px; overflow: hidden; }
-.pfill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), #5B8EFF); border-radius: 99px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.pbar-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.pbar-info span:last-child { font-family: var(--mono); color: var(--text); }
+.pbar { height: 6px; background: var(--surface); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+.pfill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), #FB923C); border-radius: 99px; transition: width .5s cubic-bezier(.4,0,.2,1); box-shadow: 0 0 12px rgba(249,115,22,.65); }
 
+/* ── LOG BOX ── */
 .logbox {
-  display: none; margin-top: 14px;
-  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r);
-  padding: 10px 14px; max-height: 88px; overflow-y: auto;
-  font-family: var(--mono); font-size: 11.5px; color: var(--text3);
+  display: none; margin-top: 16px;
+  background: #2A1505; border: 1px solid #3a2414; border-radius: var(--r);
+  padding: 12px 14px; max-height: 96px; overflow-y: auto;
+  font-family: var(--mono); font-size: 11.5px; color: #E7C3A8;
 }
-.logbox::-webkit-scrollbar { width: 3px; }
-.logbox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.log-line { padding: 1px 0; }
-.log-ok   { color: var(--green); }
-.log-err  { color: var(--red); }
-.log-warn { color: var(--amber); }
+.logbox::-webkit-scrollbar { width: 4px; }
+.logbox::-webkit-scrollbar-thumb { background: #5c3a1f; border-radius: 2px; }
+.log-line { padding: 1.5px 0; }
+.log-ok   { color: #4ADE80; }
+.log-err  { color: #FB7185; }
+.log-warn { color: #FBBF24; }
 
-/* ── BOTÃO PRINCIPAL ── */
-.btn-run {
-  width: 100%; height: 52px; margin-top: 20px;
-  border: none; border-radius: var(--r2);
-  background: var(--blue);
-  color: #fff; font-family: var(--sans); font-size: 15px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-  box-shadow: 0 2px 12px rgba(26,86,219,.35);
-  transition: all .18s;
-}
-.btn-run:hover:not(:disabled) { background: var(--blue-dk); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,86,219,.40); }
-.btn-run:active:not(:disabled) { transform: translateY(0); }
-.btn-run:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
-.btn-run svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.spin { animation: spin .7s linear infinite; }
-@keyframes spin { to{transform:rotate(360deg)} }
-
-/* ── RESULTADO ── */
+/* ── RESULT ── */
 .result-wrap { display: none; animation: fadeUp .35s ease; }
-
-.result-banner {
-  background: var(--green-lt);
-  border: 1px solid #A7F3D0;
-  border-radius: var(--r3);
-  padding: 20px 24px;
-  display: flex; align-items: center; gap: 16px;
-  margin-bottom: 12px;
-}
-.result-banner-icon {
-  width: 48px; height: 48px; border-radius: 12px;
-  background: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.result-banner-icon svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.result-title { font-size: 16px; font-weight: 700; color: var(--text); }
-.result-sub   { font-size: 13px; color: var(--text2); margin-top: 3px; }
-
-.kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
-.kpi {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: var(--r2); padding: 16px; text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-.kpi-val { font-size: 28px; font-weight: 700; line-height: 1; }
 .kpi-val.c-green { color: var(--green); }
 .kpi-val.c-red   { color: var(--red); }
 .kpi-val.c-amber { color: var(--amber); }
-.kpi-lbl { font-size: 12px; font-weight: 500; color: var(--text3); margin-top: 6px; }
-
-.dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.btn-dl {
-  height: 46px; border-radius: var(--r);
-  font-family: var(--sans); font-size: 13px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: all .15s;
-}
-.btn-dl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.btn-dl-pdf  { background: var(--red);   color: #fff; border: none; box-shadow: 0 2px 8px rgba(224,36,36,.25); }
-.btn-dl-pdf:hover  { background: #c71e1e; }
-.btn-dl-xlsx { background: var(--green); color: #fff; border: none; box-shadow: 0 2px 8px rgba(14,159,110,.25); }
-.btn-dl-xlsx:hover { background: #0a8a5f; }
-.btn-dl-doc  { background: var(--white); color: var(--text2); border: 1.5px solid var(--border); }
-.btn-dl-doc:hover  { border-color: var(--blue); color: var(--blue); }
-.btn-dl-share{ background: var(--white); color: var(--text2); border: 1.5px solid var(--border); }
-.btn-dl-share:hover{ border-color: var(--blue); color: var(--blue); }
 
 /* ── TOAST ── */
 .toast {
   position: fixed; bottom: 28px; left: 50%;
-  transform: translateX(-50%) translateY(80px);
-  background: var(--text); color: #fff;
-  border-radius: 99px; padding: 10px 20px;
+  transform: translateX(-50%) translateY(90px);
+  background: #2A1505; color: #fff;
+  border: 1px solid #3a2414;
+  border-radius: 99px; padding: 11px 22px;
   font-size: 13px; font-weight: 500;
   box-shadow: var(--shadow-lg); white-space: nowrap; z-index: 999;
   transition: transform .28s cubic-bezier(.4,0,.2,1);
 }
-.toast.ok    { background: var(--green); }
-.toast.warn  { background: var(--amber); }
-.toast.err   { background: var(--red); }
+.toast.ok    { background: var(--green); border-color: transparent; }
+.toast.warn  { background: var(--amber); border-color: transparent; color: #1a1206; }
+.toast.err   { background: var(--red); border-color: transparent; }
 .toast.show  { transform: translateX(-50%) translateY(0); }
 
-/* ── MOBILE ── */
 @media (max-width: 480px) {
-  .app { padding: 24px 16px 60px; }
   .hdr-badge span:not(.dot) { display: none; }
-  .kpi-row { gap: 8px; }
-  .kpi-val { font-size: 24px; }
 }
 </style>
 </head>
-<body>
+<body class="font-sans text-tx">
 
-<div class="app">
+<div class="max-w-[640px] mx-auto px-5 pt-8 pb-20 md:pt-10">
 
   <!-- HEADER -->
-  <header class="hdr">
-    <div class="hdr-brand">
-      <div class="hdr-logo">
+  <header class="hdr flex items-center justify-between mb-9">
+    <div class="hdr-brand flex items-center gap-3">
+      <div class="hdr-logo w-11 h-11 rounded-xl bg-brand flex items-center justify-center shadow-[0_4px_18px_rgba(249,115,22,.55)] ring-1 ring-white/10">
         <!-- arrows-diff icon -->
-        <svg viewBox="0 0 24 24"><path d="M7 16H3m0 0 4-4M3 16l4 4M17 8h4m0 0-4-4m4 4-4 4"/></svg>
+        <svg viewBox="0 0 24 24" class="w-[22px] h-[22px] fill-none stroke-white stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"><path d="M7 16H3m0 0 4-4M3 16l4 4M17 8h4m0 0-4-4m4 4-4 4"/></svg>
       </div>
       <div>
-        <div class="hdr-name">ReconBank AI</div>
-        <div class="hdr-sub">Fixer Solutions · v1.1</div>
+        <div class="hdr-name text-[18px] font-bold tracking-tight text-tx">ReconBank AI</div>
+        <div class="hdr-sub text-[12px] text-tx3 mt-px font-mono">Fixer Solutions · v1.1</div>
       </div>
     </div>
-    <div class="hdr-badge"><span class="dot"></span> IA Activa</div>
+    <div class="hdr-badge font-mono text-[11px] font-medium px-3 py-[6px] rounded-full bg-ok/10 text-ok flex items-center gap-2 border border-ok/30">
+      <span class="dot"></span> <span>IA Activa</span>
+    </div>
   </header>
 
   <!-- PASSO 1: DOCUMENTOS -->
@@ -357,23 +323,23 @@ body {
   <!-- PASSO 2: CONFIGURAÇÃO -->
   <div class="sec-title">2 — Configuração</div>
   <div class="card">
-    <div class="cfg-body">
-      <div class="cfg-row">
-        <div class="field">
-          <label>Nome da Empresa</label>
+    <div class="cfg-body p-5 flex flex-col gap-4">
+      <div class="cfg-row grid grid-cols-2 gap-3">
+        <div class="field flex flex-col gap-[6px]">
+          <label class="text-[13px] font-medium text-tx2">Nome da Empresa</label>
           <input id="empresa" type="text" placeholder="Ex: Acme, Lda"/>
         </div>
-        <div class="field">
-          <label>Período</label>
+        <div class="field flex flex-col gap-[6px]">
+          <label class="text-[13px] font-medium text-tx2">Período</label>
           <input id="periodo" type="month"/>
         </div>
       </div>
-      <div class="field field-full">
-        <label>URL do Google Apps Script</label>
-        <div class="url-wrap">
-          <input id="gas-url" type="url" placeholder="https://script.google.com/macros/s/.../exec"/>
-          <button class="btn-test" onclick="testarGAS()">
-            <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <div class="field field-full flex flex-col gap-[6px]">
+        <label class="text-[13px] font-medium text-tx2">URL do Google Apps Script</label>
+        <div class="url-wrap flex gap-2">
+          <input id="gas-url" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1"/>
+          <button class="btn-test h-[46px] px-4 border-[1.5px] border-line rounded-[10px] bg-surface text-tx2 font-sans text-[13px] font-medium cursor-pointer whitespace-nowrap transition-all flex items-center gap-[6px] hover:border-brand hover:text-brand" onclick="testarGAS()">
+            <svg viewBox="0 0 24 24" class="w-[15px] h-[15px] fill-none stroke-current stroke-2 [stroke-linecap:round]"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             Testar
           </button>
         </div>
@@ -384,7 +350,7 @@ body {
   <!-- PASSO 3: PROCESSAMENTO -->
   <div class="sec-title">3 — Processamento</div>
   <div class="card">
-    <div class="prog-body">
+    <div class="prog-body p-5">
       <div class="steps">
         <div class="step" id="s1">
           <div class="sdot"><svg viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0-12L8 8m4-4 4 4"/></svg></div>
@@ -416,55 +382,55 @@ body {
   </div>
 
   <!-- BOTÃO PRINCIPAL -->
-  <button class="btn-run" id="btn-run" onclick="iniciar()" disabled>
-    <svg id="run-icon" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+  <button class="btn-run w-full h-[54px] mt-5 border-0 rounded-[14px] bg-brand text-white font-sans text-[15px] font-semibold cursor-pointer flex items-center justify-center gap-[10px] shadow-[0_6px_22px_rgba(249,115,22,.5)] transition-all hover:bg-orange-500 hover:-translate-y-px active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none" id="btn-run" onclick="iniciar()" disabled>
+    <svg id="run-icon" viewBox="0 0 24 24" class="w-[18px] h-[18px] fill-none stroke-current [stroke-width:2.2] [stroke-linecap:round] [stroke-linejoin:round]"><path d="M5 3l14 9-14 9V3z"/></svg>
     <span id="run-label">Processar Reconciliação</span>
   </button>
 
   <!-- RESULTADO -->
   <div class="result-wrap" id="result-wrap">
-    <div class="sec-title" style="margin-top:28px">4 — Resultado</div>
+    <div class="sec-title" style="margin-top:30px">4 — Resultado</div>
 
-    <div class="result-banner">
-      <div class="result-banner-icon">
-        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+    <div class="result-banner bg-ok/10 border border-ok/30 rounded-[18px] px-6 py-5 flex items-center gap-4 mb-3">
+      <div class="result-banner-icon w-12 h-12 rounded-[14px] bg-ok flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(16,185,129,.5)]">
+        <svg viewBox="0 0 24 24" class="w-6 h-6 fill-none stroke-white [stroke-width:2.2] [stroke-linecap:round] [stroke-linejoin:round]"><path d="M5 13l4 4L19 7"/></svg>
       </div>
       <div>
-        <div class="result-title">Reconciliação concluída</div>
-        <div class="result-sub" id="res-sub">— transacções analisadas</div>
+        <div class="result-title text-[16px] font-bold text-tx">Reconciliação concluída</div>
+        <div class="result-sub text-[13px] text-tx2 mt-[3px] font-mono" id="res-sub">— transacções analisadas</div>
       </div>
     </div>
 
-    <div class="kpi-row">
-      <div class="kpi">
-        <div class="kpi-val c-green" id="k-ok">0</div>
-        <div class="kpi-lbl">Conciliados</div>
+    <div class="kpi-row grid grid-cols-3 gap-[10px] mb-3">
+      <div class="kpi bg-panel border border-line rounded-[14px] p-4 text-center shadow-sm">
+        <div class="kpi-val c-green text-[28px] font-bold leading-none" id="k-ok">0</div>
+        <div class="kpi-lbl text-[12px] font-medium text-tx3 mt-[6px]">Conciliados</div>
       </div>
-      <div class="kpi">
-        <div class="kpi-val c-red" id="k-dv">0</div>
-        <div class="kpi-lbl">Divergências</div>
+      <div class="kpi bg-panel border border-line rounded-[14px] p-4 text-center shadow-sm">
+        <div class="kpi-val c-red text-[28px] font-bold leading-none" id="k-dv">0</div>
+        <div class="kpi-lbl text-[12px] font-medium text-tx3 mt-[6px]">Divergências</div>
       </div>
-      <div class="kpi">
-        <div class="kpi-val c-amber" id="k-pd">0</div>
-        <div class="kpi-lbl">Pendentes</div>
+      <div class="kpi bg-panel border border-line rounded-[14px] p-4 text-center shadow-sm">
+        <div class="kpi-val c-amber text-[28px] font-bold leading-none" id="k-pd">0</div>
+        <div class="kpi-lbl text-[12px] font-medium text-tx3 mt-[6px]">Pendentes</div>
       </div>
     </div>
 
-    <div class="dl-grid">
-      <button class="btn-dl btn-dl-pdf"   onclick="dlPDF()">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <div class="dl-grid grid grid-cols-2 gap-[10px]">
+      <button class="btn-dl btn-dl-pdf h-[48px] rounded-[10px] font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all bg-danger text-white border-0 shadow-[0_2px_10px_rgba(244,63,94,.3)] hover:brightness-110" onclick="dlPDF()">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Descarregar PDF
       </button>
-      <button class="btn-dl btn-dl-xlsx"  onclick="dlExcel()">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="14" y2="9"/></svg>
+      <button class="btn-dl btn-dl-xlsx h-[48px] rounded-[10px] font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all bg-ok text-white border-0 shadow-[0_2px_10px_rgba(16,185,129,.3)] hover:brightness-110" onclick="dlExcel()">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="14" y2="9"/></svg>
         Descarregar Excel
       </button>
-      <button class="btn-dl btn-dl-doc"   onclick="dlDoc()">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <button class="btn-dl btn-dl-doc h-[48px] rounded-[10px] font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all bg-surface text-tx2 border-[1.5px] border-line hover:border-brand hover:text-brand" onclick="dlDoc()">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Google Doc
       </button>
-      <button class="btn-dl btn-dl-share" onclick="partilhar()">
-        <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <button class="btn-dl btn-dl-share h-[48px] rounded-[10px] font-sans text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all bg-surface text-tx2 border-[1.5px] border-line hover:border-brand hover:text-brand" onclick="partilhar()">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Partilhar
       </button>
     </div>
@@ -513,7 +479,7 @@ function renderFiles() {
     d.className = 'fitem';
     d.innerHTML = `
       <div class="fitem-icon">
-        <svg viewBox="0 0 24 24"><path fill="none" stroke="#1A56DB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline fill="none" stroke="#1A56DB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" points="14 2 14 8 20 8"/></svg>
+        <svg viewBox="0 0 24 24"><path fill="none" stroke="#F97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline fill="none" stroke="#F97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" points="14 2 14 8 20 8"/></svg>
       </div>
       <div class="fitem-body">
         <div class="fitem-name">${f.name}</div>
