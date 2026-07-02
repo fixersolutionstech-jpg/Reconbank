@@ -277,6 +277,7 @@ body::before {
   .hdr-badge span:not(.dot) { display: none; }
 }
 </style>
+<script src="fixeros-auth.js"></script>
 </head>
 <body class="font-sans text-tx">
 
@@ -447,15 +448,17 @@ let gasResult = null;
 const GAS_URL_KEY = 'reconbank_gas_url';
 const EMP_KEY     = 'reconbank_empresa';
 
-// ── INIT ──
+// ── INIT (protegido por login FixerOS) ──
 window.addEventListener('load', () => {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-  const saved = localStorage.getItem(GAS_URL_KEY);
-  if (saved) document.getElementById('gas-url').value = saved;
-  const emp = localStorage.getItem(EMP_KEY);
-  if (emp) document.getElementById('empresa').value = emp;
-  const now = new Date();
-  document.getElementById('periodo').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  FixerAuth.exigirLogin('reconbank').then(() => {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    const saved = localStorage.getItem(GAS_URL_KEY);
+    if (saved) document.getElementById('gas-url').value = saved;
+    const emp = localStorage.getItem(EMP_KEY);
+    if (emp) document.getElementById('empresa').value = emp;
+    const now = new Date();
+    document.getElementById('periodo').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }).catch(() => { /* gate de login já está visível, nada a fazer aqui */ });
 });
 
 // ── DROP ZONE ──
@@ -548,7 +551,7 @@ async function iniciar() {
       setStep('s2','active'); prog(25, 'A enviar para o Drive...');
       log('A enviar para o servidor...');
 
-      const payload = { empresa, periodo, arquivos };
+      const payload = { empresa, periodo, arquivos, authToken: FixerAuth.getToken() };
       const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
