@@ -572,6 +572,7 @@ body:not(.auth-ok) { visibility: hidden; }
 
         <!-- passo 4 -->
         <div class="painel" id="p4">
+          <div id="sug-card" style="display:none;margin-bottom:16px"></div>
           <div class="rk">
             <div class="rcard v"><div class="rlbl">Conciliados</div><div class="rval" id="k-ok">0</div><div class="rsub" id="k-taxa">—</div></div>
             <div class="rcard l"><div class="rlbl">Diferença total</div><div class="rval" id="k-dif">0,00 MZN</div><div class="rsub" id="k-dv-s">—</div></div>
@@ -1474,14 +1475,7 @@ function mostrarResultado(resumo, raw, ms) {
     partes.push('<p style="font-size:12px"><button class="btn btn-s" onclick="fecharPeriodo()">Fechar período e transportar pendentes</button> ' +
       '<span style="color:var(--text3)">Guarda os pendentes para a reconciliação do período seguinte desta conta.</span></p>');
   }
-  if (raw && raw.sugestaoPerfil) {
-    partes.push('<div style="border:1px solid #2B9C86;background:rgba(43,156,134,.10);border-radius:8px;padding:10px 12px;margin:10px 0">' +
-      '<b>Perfil sugerido para esta conta</b><p style="margin:6px 0">' + esc(raw.sugestaoPerfil.motivo) +
-      ' Propõe-se <b>inverter o sinal ' + esc((raw.rotulos && raw.rotulos.externoDo) || 'do extracto') + '</b> sempre que reconciliares esta conta.</p>' +
-      '<input id="perfil-motivo" type="text" maxlength="200" value="Convenção de sinal do extracto oposta à da contabilidade (detectado pelo sistema)" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:6px 8px">' +
-      '<button class="btn btn-p" onclick="confirmarPerfilSugerido()">Confirmar perfil e repetir</button> ' +
-      '<span style="font-size:12px;color:var(--text3)">Fica registado com o teu nome, a data e o motivo.</span></div>');
-  }
+  renderSugestaoPerfil(raw);
   if (raw && raw.conclusao) partes.push('<p>' + esc(raw.conclusao) + '</p>');
   if (raw && Array.isArray(raw.recomendacoes) && raw.recomendacoes.length) {
     partes.push('<ul>' + raw.recomendacoes.map((r) => '<li>' + esc(r) + '</li>').join('') + '</ul>');
@@ -1619,8 +1613,14 @@ function pedirConfirmacaoLeitura(r) {
     const num = (v) => (v === null || v === undefined || v === '') ? '' : String(v);
     const fmt = (v) => Number(v).toLocaleString(['pt-MZ', 'pt-PT'], { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const corLinha = (c) => c === 'saldo_nao_bate' ? 'background:rgba(220,60,60,.14)' : '';
-    const badgeProva = (d) => !d.prova ? '<span class="badge av">Sem saldo inicial/final para provar</span>'
-      : (d.prova.ok ? '<span class="badge">Saldo confere</span>' : '<span class="badge er">Saldo não bate: diferença ' + esc(fmt(d.prova.diferenca)) + '</span>');
+    const cadeia = (d) => { const com = d.linhas.filter((l) => l.confianca !== 'sem_saldo'); return { n: com.length, mau: com.filter((l) => l.confianca === 'saldo_nao_bate').length }; };
+    const badgeProva = (d) => {
+      if (d.prova) return d.prova.ok ? '<span class="badge">Saldo confere</span>' : '<span class="badge er">Saldo não bate: diferença ' + esc(fmt(d.prova.diferenca)) + '</span>';
+      const c = cadeia(d);
+      if (c.n >= 3 && c.mau === 0) return '<span class="badge">Saldo corrido confere (' + c.n + ' linhas)</span>';
+      if (c.mau > 0) return '<span class="badge er">' + c.mau + ' linha(s) em que o saldo corrido não bate</span>';
+      return '<span class="badge av">Sem saldo para provar</span>';
+    };
     function linhaHtml(d, di, l, li) {
       const t = (k, w) => '<input data-d="' + di + '" data-i="' + li + '" data-k="' + k + '" value="' + esc(num(l[k])) + '" style="width:' + w + ';padding:4px;box-sizing:border-box"/>';
       return '<tr id="lr-' + di + '-' + li + '" style="' + corLinha(l.confianca) + '"><td>' + t('data', '96px') + '</td><td>' + t('descricao', '100%') + '</td><td>' + t('debito', '88px') + '</td><td>' + t('credito', '88px') + '</td>' +
@@ -1638,7 +1638,7 @@ function pedirConfirmacaoLeitura(r) {
           '<div class="card" style="margin-bottom:12px;padding:12px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><b style="flex:1;min-width:200px">' + esc(d.titulo || d.ficheiro || ('Documento ' + (di + 1))) + '</b>' +
           '<select data-d="' + di + '" data-k="lado" style="padding:6px"><option value="desconhecido"' + (d.lado === 'desconhecido' ? ' selected' : '') + '>Que documento é?</option><option value="externo"' + (d.lado === 'externo' ? ' selected' : '') + '>Extracto / entidade externa</option><option value="contabil"' + (d.lado === 'contabil' ? ' selected' : '') + '>Contabilidade</option></select>' +
           '<select data-d="' + di + '" data-k="convencao" style="padding:6px" title="Como se calcula o valor de cada linha"><option value="A"' + (d.convencao === 'A' ? ' selected' : '') + '>valor = crédito − débito</option><option value="B"' + (d.convencao === 'B' ? ' selected' : '') + '>valor = débito − crédito</option></select>' +
-          '<span class="badge ' + (d.convencaoOrigem === 'provada_por_saldo' ? '' : 'av') + '">' + (d.convencaoOrigem === 'provada_por_saldo' ? 'convenção provada pelo saldo' : 'convenção por omissão — confirma') + '</span></div>' +
+          '<span class="badge ' + (d.convencaoOrigem === 'provada_por_saldo' ? '' : 'av') + '">' + (d.convencaoOrigem === 'provada_por_saldo' ? 'convenção provada pelo saldo' : (d.convencaoOrigem === 'derivada_da_contabilidade' ? 'convenção derivada da contabilidade — confirma' : (d.convencaoOrigem === 'confirmada' ? 'convenção confirmada por ti' : 'convenção por omissão — confirma'))) + '</span></div>' +
           '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:6px;font-size:13px">Saldo inicial <input data-d="' + di + '" data-k="saldoInicial" value="' + esc(num(d.saldoInicial)) + '" style="width:120px;padding:4px"/> Saldo final <input data-d="' + di + '" data-k="saldoFinal" value="' + esc(num(d.saldoFinal)) + '" style="width:120px;padding:4px"/> ' +
           '<span id="lp-' + di + '">' + badgeProva(d) + '</span> <span id="lm-' + di + '" style="color:var(--text3)">' + d.linhas.length + ' linhas · movimento ' + esc(fmt(d.movimento)) + '</span></div>' +
           ((d.avisos || []).length ? '<ul style="margin:4px 0 6px 18px;font-size:12px">' + d.avisos.map((a) => '<li>' + esc(a) + '</li>').join('') + '</ul>' : '') +
@@ -1889,6 +1889,19 @@ function renderRevisao(raw) {
   card.innerHTML = '<h2>Rever e confirmar</h2><p class="sub">O que confirmares aqui fica memorizado para esta empresa e conta, com o teu nome e a data. Repete a reconciliação para ver o efeito.</p>' +
     sec('Divergências', L.divergencias.length, dv) + sec('Sugestões de agrupamento', L.sugestoes.length, sg) + sec('Para revisão humana', L.revisao.length, rv) + sec('Maiores pendentes', Math.min(30, L.pendentes.length), pe) +
     '<div style="margin-top:12px"><button class="btn btn-p" onclick="iniciar()">Repetir a reconciliação</button> <button class="btn btn-s" onclick="irPara(\'personalizacao\')">Abrir a Personalização</button></div>';
+  card.style.display = 'block';
+}
+// Proposta de perfil (sinais opostos entre os dois lados): cartão grande no topo do resultado, impossível de não ver
+function renderSugestaoPerfil(raw) {
+  const card = $('sug-card');
+  if (!raw || !raw.sugestaoPerfil) { card.style.display = 'none'; card.innerHTML = ''; return; }
+  const sug = raw.sugestaoPerfil, ext = (raw.rotulos && raw.rotulos.externoDo) || 'do extracto';
+  card.innerHTML = '<div style="border:2px solid #2B9C86;background:rgba(43,156,134,.12);border-radius:12px;padding:16px 18px">' +
+    '<h2 style="margin:0 0 6px">Falta um passo: confirmar o perfil desta conta</h2>' +
+    '<p style="margin:0 0 8px">' + esc(sug.motivo) + ' Por isso quase nada se concilia. Propõe-se <b>inverter o sinal ' + esc(ext) + '</b> sempre que reconciliares esta conta.</p>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="perfil-motivo" type="text" maxlength="200" value="Convenção de sinal do extracto oposta à da contabilidade (detectado pelo sistema)" style="flex:1;min-width:260px;padding:8px 10px;box-sizing:border-box">' +
+    '<button class="btn btn-p" onclick="confirmarPerfilSugerido()">Confirmar perfil e repetir</button></div>' +
+    '<p style="margin:8px 0 0;font-size:12px;color:var(--text3)">Fica registado com o teu nome, a data e o motivo. Podes desactivá-lo na Personalização.</p></div>';
   card.style.display = 'block';
 }
 async function fecharPeriodo() {
