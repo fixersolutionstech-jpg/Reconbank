@@ -1368,9 +1368,10 @@ async function iniciar() {
     // Saldos só quando há UM ficheiro por lado (com vários ficheiros no mesmo lado
     // o saldo do conjunto é ambíguo — o backend avisa em vez de adivinhar).
     const saldosEnvio = saldosFinais || { banco: saldoUnico(saldosPorLado.banco), contabil: saldoUnico(saldosPorLado.contabil) };
-    ctxRun = { empresa, conta: $('conta').value.trim(), tipo: $('tipo').value, periodo, saldos: saldosEnvio };
+    // v3.23 — a pré-visualização pode ter acertado o período pelas datas lidas
+    ctxRun = { empresa, conta: $('conta').value.trim(), tipo: $('tipo').value, periodo: $('periodo').value || periodo, saldos: saldosEnvio };
     const payload = {
-      empresa, periodo,
+      empresa, periodo: ctxRun.periodo,
       arquivos: leituraFeita ? [] : arquivos,                 // os originais já foram arquivados no passo da leitura
       tipo: $('tipo').value, conta: $('conta').value.trim(),
       movimentosPreExtraidos: (movimentosPreExtraidos.banco.length || movimentosPreExtraidos.contabil.length) ? movimentosPreExtraidos : null,
@@ -1396,6 +1397,12 @@ async function iniciar() {
     log('Relatórios gerados ✓', 'ok');
     setStep('s4', 'done'); prog(100, 'Concluído!');
 
+    // v3.23 — o período sai dos documentos: o campo e o fecho passam a usar o que o servidor resolveu
+    const pe = data.data.periodoEfectivo;
+    if (pe && pe.ajustado && /^\d{4}-\d{2}$/.test(pe.periodo || '')) {
+      $('periodo').value = pe.periodo; ctxRun.periodo = pe.periodo;
+      log('Período acertado pelas datas dos documentos: ' + pe.rotulo + (pe.indicado ? ' (indicado: ' + pe.indicado + ')' : ''), 'ok');
+    }
     mostrarResultado(data.data.resumo || {}, data.data, Date.now() - t0);
     histTs = 0; // força recarregar o histórico na próxima vista
   } catch (e) {
@@ -1713,6 +1720,8 @@ function pedirConfirmacaoLeitura(r) {
       else if (act === 'add') { docs[di].linhas.push({ data: '', descricao: '', debito: 0, credito: 0, saldo: null, valor: 0, marca: '', confianca: 'sem_saldo' }); render(); }
       else if (act === 'periodo' && r.periodoSugerido) { $('periodo').value = r.periodoSugerido.periodo; render(); }
     });
+    // v3.23 — mês dominante nas datas lidas (≥50%) passa a ser o período, sem botão a carregar
+    if (r.periodoSugerido && r.periodoSugerido.proporcao >= 0.5 && /^\d{4}-\d{2}$/.test(r.periodoSugerido.periodo || '')) $('periodo').value = r.periodoSugerido.periodo;
     render();
   });
 }
