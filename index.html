@@ -922,11 +922,17 @@ function ladoAutomatico(f) {
 }
 function corrigirLadosDuplicados() {
   if (files.length < 2 || !files.every((x) => x._lado === files[0]._lado)) return;
-  const fracos = files.filter((x) => !x._forte);
-  if (!fracos.length || fracos.length === files.length && files.length === 0) return;
-  fracos.forEach((x) => { x._lado = files[0]._lado === 'externo' ? 'contabil' : 'externo'; });
+  const livres = files.filter((x) => !x._doUtilizador);
+  if (!livres.length) return;                                    // tudo escolhido pelo utilizador: respeita-se (o servidor avisa)
+  const oposto = files[0]._lado === 'externo' ? 'contabil' : 'externo';
+  const fracos = livres.filter((x) => !x._forte);
+  if (fracos.length) { fracos.forEach((x) => { x._lado = oposto; }); return; }
+  // A mesma pista no nome de todos (ex.: "EXTRATO … .pdf" nos dois): o nome deixa de decidir. Mostra-se um palpite
+  // pela ordem e NENHUM vai como certo — o servidor decide pelo conteúdo e o utilizador confirma na pré-visualização.
+  livres.forEach((x) => { x._forte = false; });
+  files.slice(1).filter((x) => !x._doUtilizador).forEach((x) => { x._lado = oposto; });
 }
-function setLado(i, lado) { if (files[i]) { files[i]._lado = lado === 'contabil' ? 'contabil' : 'externo'; files[i]._forte = true; } }
+function setLado(i, lado) { if (files[i]) { files[i]._lado = lado === 'contabil' ? 'contabil' : 'externo'; files[i]._forte = true; files[i]._doUtilizador = true; } }
 
 function onFiles(newFiles) {
   [...newFiles].forEach((f) => { const r = ladoAutomatico(f); f._lado = r.lado; f._forte = r.forte; files.push(f); });
@@ -950,7 +956,7 @@ function renderFiles() {
       </div>
       <div class="fitem-body">
         <div class="fitem-name">${esc(f.name)}</div>
-        <div class="fitem-meta">${esc(ext)} · ${sz}</div>
+        <div class="fitem-meta">${esc(ext)} · ${sz}${f._forte ? '' : ' · lado por confirmar'}</div>
       </div>
       <select onchange="setLado(${i}, this.value)" title="Que documento é este?" style="margin-right:8px;font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid var(--line,#ccc);background:var(--surface,#fff);color:inherit">
         <option value="externo"${f._lado === 'externo' ? ' selected' : ''}>Extracto / entidade</option>
@@ -1332,7 +1338,7 @@ async function iniciar() {
 
     const arquivos = await Promise.all(ficheirosParaOCR.map(toBase64));
     // v3.16 — leitura por IA (PDF, imagem, formato não reconhecido): a IA só transcreve; o utilizador CONFIRMA antes de cruzar
-    let notasDocumento = [], leituraFeita = false, saldosFinais = null;
+    let notasDocumento = [], avisosLeitura = [], leituraFeita = false, saldosFinais = null;
     const saldoUnico = (arr) => (arr.length === 1 && arr[0]) ? arr[0] : null;
     if (arquivos.length > 0) {
       const sig = assinaturaFicheiros();
@@ -1352,7 +1358,7 @@ async function iniciar() {
       }
       movimentosPreExtraidos.banco.push(...leitura.movimentos.banco);
       movimentosPreExtraidos.contabil.push(...leitura.movimentos.contabil);
-      notasDocumento = leitura.notas; saldosFinais = leitura.saldos; leituraFeita = true;
+      notasDocumento = leitura.notas; avisosLeitura = leitura.avisos || []; saldosFinais = leitura.saldos; leituraFeita = true;
     }
     setStep('s1', 'done'); log('Ficheiros prontos ✓', 'ok');
 
@@ -1368,7 +1374,7 @@ async function iniciar() {
       arquivos: leituraFeita ? [] : arquivos,                 // os originais já foram arquivados no passo da leitura
       tipo: $('tipo').value, conta: $('conta').value.trim(),
       movimentosPreExtraidos: (movimentosPreExtraidos.banco.length || movimentosPreExtraidos.contabil.length) ? movimentosPreExtraidos : null,
-      saldos: saldosEnvio, notasDocumento, leituraConfirmada: leituraFeita,
+      saldos: saldosEnvio, notasDocumento, avisosLeitura, leituraConfirmada: leituraFeita,
       authToken: FixerAuth.getToken()
     };
     const resp = await fetch(GAS_URL, {
@@ -1563,7 +1569,7 @@ function recalcularDocumentoLido(doc) {
   const arred = (x) => Math.round(x * 100) / 100;
   doc.linhas.forEach((l, i) => {
     l.valor = valorDaLinhaLida(l, doc.convencao);
-    const ant = doc.linhas[i - 1], tem = (x) => x !== null && x !== undefined && x !== '' && !isNaN(Number(x));
+    const ant = i === 0 ? { saldo: doc.saldoInicial } : doc.linhas[i - 1], tem = (x) => x !== null && x !== undefined && x !== '' && !isNaN(Number(x));   // 1.ª linha: prova com o saldo inicial
     if (!tem(l.saldo)) l.confianca = 'sem_saldo';
     else if (!ant || !tem(ant.saldo)) l.confianca = 'ok';
     else l.confianca = Math.abs((Number(l.saldo) - Number(ant.saldo)) - l.valor) <= 0.011 ? 'ok' : 'saldo_nao_bate';
@@ -1577,7 +1583,7 @@ function recalcularDocumentoLido(doc) {
 // Documentos confirmados (+ o que já veio de Excel) → o que se envia ao servidor. Saldo de um lado só quando UMA fonte cobre o lado.
 function leituraParaMovimentos(documentos, pre, saldosPre) {
   pre = pre || { banco: [], contabil: [] }; saldosPre = saldosPre || {};
-  const out = { movimentos: { banco: [], contabil: [] }, saldos: { banco: null, contabil: null }, notas: [] };
+  const out = { movimentos: { banco: [], contabil: [] }, saldos: { banco: null, contabil: null }, notas: [], avisos: [] };
   [['externo', 'banco'], ['contabil', 'contabil']].forEach(([lado, k]) => {
     const docs = documentos.filter((d) => d.lado === lado);
     docs.forEach((d) => d.linhas.forEach((l) => out.movimentos[k].push({ data: l.data, descricao: l.descricao, valor: l.valor })));
@@ -1585,6 +1591,16 @@ function leituraParaMovimentos(documentos, pre, saldosPre) {
     else if (docs.length === 0 && saldosPre[k]) out.saldos[k] = saldosPre[k];
   });
   documentos.forEach((d) => (d.notas || []).forEach((n) => out.notas.push(n)));
+  // v3.19 — o que a pré-visualização avisou segue para o relatório final (o saldo corrido conta-se outra vez: o utilizador pode ter corrigido linhas)
+  documentos.forEach((d) => {
+    const nome = d.titulo || d.ficheiro || 'documento';
+    if (d.lado !== 'externo' && d.lado !== 'contabil') { out.avisos.push('Documento "' + nome + '" ficou sem lado na pré-visualização e não entrou na reconciliação.'); return; }
+    (d.avisos || []).filter((a) => !/saldo corrido não bate/.test(a)).forEach((a) => out.avisos.push('[' + nome + '] ' + a));
+    const mau = (d.linhas || []).filter((l) => l.confianca === 'saldo_nao_bate').length;
+    if (mau) out.avisos.push('[' + nome + '] ' + mau + ' linha(s) em que o saldo corrido não bate (confirmadas assim na pré-visualização).');
+    if (d.prova && !d.prova.ok) out.avisos.push('[' + nome + '] O saldo não bate: inicial + movimentos = ' + d.prova.esperado + ', o documento indica ' + d.saldoFinal + ' (diferença ' + d.prova.diferenca + ') — confirmado assim na pré-visualização.');
+  });
+  out.avisos = out.avisos.slice(0, 30);
   return out;
 }
 // ══ FIM DOS HELPERS PUROS ══
@@ -1625,7 +1641,7 @@ function pedirConfirmacaoLeitura(r) {
       const t = (k, w) => '<input data-d="' + di + '" data-i="' + li + '" data-k="' + k + '" value="' + esc(num(l[k])) + '" style="width:' + w + ';padding:4px;box-sizing:border-box"/>';
       return '<tr id="lr-' + di + '-' + li + '" style="' + corLinha(l.confianca) + '"><td>' + t('data', '96px') + '</td><td>' + t('descricao', '100%') + '</td><td>' + t('debito', '88px') + '</td><td>' + t('credito', '88px') + '</td>' +
         '<td style="text-align:right;color:var(--text3)">' + esc(l.saldo === null || l.saldo === undefined ? '' : fmt(l.saldo)) + '</td><td id="lv-' + di + '-' + li + '" style="text-align:right;font-weight:700;white-space:nowrap">' + esc(fmt(l.valor)) + '</td>' +
-        '<td>' + (l.marca ? '<span class="badge av" title="Marca manuscrita no documento">' + esc(l.marca) + '</span>' : '') + '</td><td><button class="btn btn-s" data-act="del" data-d="' + di + '" data-i="' + li + '" title="Apagar linha">×</button></td></tr>';
+        '<td>' + (l.marca ? '<span class="badge av" title="Marca manuscrita no documento">' + esc(l.marca) + '</span>' : '') + (l.corrigidaPeloSaldo ? '<span class="badge av" title="O valor estava na outra coluna (débito/crédito); corrigido pelo saldo corrido do documento">coluna corrigida</span>' : '') + '</td><td><button class="btn btn-s" data-act="del" data-d="' + di + '" data-i="' + li + '" title="Apagar linha">×</button></td></tr>';
     }
     function render() {
       const todosLados = docs.every((d) => d.lado === 'externo' || d.lado === 'contabil');
