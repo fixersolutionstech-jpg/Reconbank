@@ -1603,6 +1603,18 @@ function leituraParaMovimentos(documentos, pre, saldosPre) {
   out.avisos = out.avisos.slice(0, 30);
   return out;
 }
+// Pergunta antes de confirmar uma leitura em que mais de 10% das linhas com saldo não batem (mínimo 3); '' = não perguntar
+function alertaSaldoCorrido(documentos) {
+  let mau = 0, comSaldo = 0;
+  documentos.forEach((d) => (d.linhas || []).forEach((l) => {
+    if (l.confianca === 'sem_saldo' || l.confianca === undefined) return;
+    comSaldo++; if (l.confianca === 'saldo_nao_bate') mau++;
+  }));
+  if (mau < 3 || mau / comSaldo <= 0.1) return '';
+  return 'Há ' + mau + ' linha(s) em que o saldo corrido não bate (' + Math.round(mau / comSaldo * 100) + '% das linhas com saldo). ' +
+    'Normalmente é um erro de leitura (ex.: separadores de milhares lidos como decimais) e a reconciliação sai errada.\n\n' +
+    'OK = confirmar mesmo assim. Cancelar = voltar para corrigir ou cancelar e repetir a leitura.';
+}
 // ══ FIM DOS HELPERS PUROS ══
 
 
@@ -1692,7 +1704,11 @@ function pedirConfirmacaoLeitura(r) {
       const b = e.target.closest && e.target.closest('[data-act]'); if (!b) return;
       const act = b.dataset.act, di = Number(b.dataset.d);
       if (act === 'cancelar') { overlay.remove(); resolve(null); }
-      else if (act === 'confirmar') { docs.forEach((d) => { d.linhas = d.linhas.filter((l) => /^\d{4}-\d{2}-\d{2}$/.test(l.data) && l.valor !== 0); }); overlay.remove(); resolve(docs); }
+      else if (act === 'confirmar') {
+        // v3.21 — muitas linhas com o saldo corrido a falhar = quase sempre leitura errada (ex.: separadores de milhares)
+        const a = alertaSaldoCorrido(docs);
+        if (a && !window.confirm(a)) return;
+        docs.forEach((d) => { d.linhas = d.linhas.filter((l) => /^\d{4}-\d{2}-\d{2}$/.test(l.data) && l.valor !== 0); }); overlay.remove(); resolve(docs); }
       else if (act === 'del') { docs[di].linhas.splice(Number(b.dataset.i), 1); recalcularDocumentoLido(docs[di]); render(); }
       else if (act === 'add') { docs[di].linhas.push({ data: '', descricao: '', debito: 0, credito: 0, saldo: null, valor: 0, marca: '', confianca: 'sem_saldo' }); render(); }
       else if (act === 'periodo' && r.periodoSugerido) { $('periodo').value = r.periodoSugerido.periodo; render(); }
