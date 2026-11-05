@@ -866,6 +866,7 @@ window.addEventListener('load', () => {
     const now = new Date();
     $('periodo').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     carregarHistorico(true);
+    sincronizarFormatos();   // v3.24: formatos de extracto confirmados pelo escritório (não bloqueia)
   }).catch(() => { /* FixerAuth já mostrou o ecrã de login */ });
 });
 
@@ -1161,16 +1162,44 @@ function calcularSaldosDoDocumento(movimentosComSaldo) {
 }
 
 // Camada 5 — memória de confirmações humanas por impressão digital
-// ESTRUTURAL (nunca pelo nome da empresa). MVP: localStorage deste
-// browser; para partilhar entre postos, promover para uma Sheet
-// central (mesmo padrão do Perfis_Empresa no DocScan).
+// ESTRUTURAL (nunca pelo nome da empresa). v3.24: guardada no SERVIDOR, por escritório
+// (formatos_listar/guardar/esquecer), para que um colega noutro computador não volte a ser
+// perguntado. O localStorage fica como cópia local (funciona sem rede) e as confirmações antigas
+// deste browser sobem sozinhas para o escritório na primeira sincronização.
 const FINGERPRINT_PREFIX = 'motor_estrutural_confirmado_';
+let FORMATOS_ESCRITORIO = {};      // fingerprint → { mapeamento, hipoteseNome, confirmadoEm, por }
+let formatosSincronizados = false;
+function formatosLocais() {
+  const out = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(FINGERPRINT_PREFIX)) { try { out[k.slice(FINGERPRINT_PREFIX.length)] = JSON.parse(localStorage.getItem(k)); } catch (e) {} } } } catch (e) {}
+  return out;
+}
 function obterMapeamentoConfirmado(fingerprint) {
+  if (FORMATOS_ESCRITORIO[fingerprint]) return FORMATOS_ESCRITORIO[fingerprint];
   try { const raw = localStorage.getItem(FINGERPRINT_PREFIX + fingerprint); return raw ? JSON.parse(raw) : null; }
   catch(e) { return null; }
 }
 function gravarMapeamentoConfirmado(fingerprint, mapeamento, hipoteseNome) {
-  localStorage.setItem(FINGERPRINT_PREFIX + fingerprint, JSON.stringify({ mapeamento, hipoteseNome, confirmadoEm: new Date().toISOString() }));
+  const reg = { mapeamento, hipoteseNome, confirmadoEm: new Date().toISOString() };
+  try { localStorage.setItem(FINGERPRINT_PREFIX + fingerprint, JSON.stringify(reg)); } catch (e) {}
+  FORMATOS_ESCRITORIO[fingerprint] = reg;
+  return apiPerfis('formatos_guardar', { fingerprint, mapeamento, hipoteseNome })
+    .catch((e) => toast('Formato guardado só neste computador (servidor: ' + e.message + ')', 'warn'));
+}
+// Lê os formatos do escritório e sobe os que só existem neste browser (1 pedido por formato novo; nunca bloqueia).
+async function sincronizarFormatos() {
+  try {
+    const r = await apiPerfis('formatos_listar', {});
+    FORMATOS_ESCRITORIO = r.formatos || {};
+    const locais = formatosLocais();
+    for (const fp of Object.keys(locais)) {
+      if (FORMATOS_ESCRITORIO[fp] || !locais[fp] || !locais[fp].mapeamento) continue;
+      await apiPerfis('formatos_guardar', { fingerprint: fp, mapeamento: locais[fp].mapeamento, hipoteseNome: locais[fp].hipoteseNome });
+      FORMATOS_ESCRITORIO[fp] = locais[fp];
+    }
+    formatosSincronizados = true;
+  } catch (e) { formatosSincronizados = false; }
+  return formatosSincronizados;
 }
 
 function inferirEstrutura(linhas) {
@@ -2198,15 +2227,14 @@ async function verServico() {
 
 // ── CONFIGURAÇÕES ──
 function contarFormatos() {
-  let n = 0;
-  for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i).startsWith(FINGERPRINT_PREFIX)) n++;
-  return n;
+  return Object.keys(Object.assign({}, formatosLocais(), FORMATOS_ESCRITORIO)).length;
 }
 function prepararConfig() {
   aplicarTema();
   $('cfg-emp').value = localStorage.getItem(EMP_KEY) || '';
   const n = contarFormatos();
-  $('cfg-fmt').textContent = n ? n + (n === 1 ? ' formato de extracto memorizado' : ' formatos de extracto memorizados') + ' neste dispositivo.' : 'Nenhum formato memorizado neste dispositivo.';
+  $('cfg-fmt').textContent = (n ? n + (n === 1 ? ' formato de extracto memorizado' : ' formatos de extracto memorizados') : 'Nenhum formato memorizado') +
+    (formatosSincronizados ? ' no escritório (partilhado por todos os colegas).' : ' neste dispositivo (servidor indisponível).');
   verServico();
 }
 function guardarEmpresaDefeito() {
@@ -2214,11 +2242,15 @@ function guardarEmpresaDefeito() {
   localStorage.setItem(EMP_KEY, v);
   $('empresa').value = v;
 }
-function limparFormatos() {
+async function limparFormatos() {
+  const n = contarFormatos();
+  if (!n) { toast('Não havia formatos memorizados', 'warn'); return; }
+  if (!confirm('Esquecer os ' + n + ' formato(s) de extracto memorizados para TODO o escritório? Os colegas voltam a ser perguntados.')) return;
   const chaves = [];
-  for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i).startsWith(FINGERPRINT_PREFIX)) chaves.push(localStorage.key(i));
-  chaves.forEach((k) => localStorage.removeItem(k));
-  toast(chaves.length ? 'Formatos esquecidos' : 'Não havia formatos memorizados', chaves.length ? 'ok' : 'warn');
+  try { for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i).startsWith(FINGERPRINT_PREFIX)) chaves.push(localStorage.key(i)); } catch (e) {}
+  chaves.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
+  try { await apiPerfis('formatos_esquecer', {}); FORMATOS_ESCRITORIO = {}; toast('Formatos esquecidos no escritório', 'ok'); }
+  catch (e) { toast('Esquecidos só neste computador (servidor: ' + e.message + ')', 'warn'); }
   prepararConfig();
 }
 async function alterarPassword() {
