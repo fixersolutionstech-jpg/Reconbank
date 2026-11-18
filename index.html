@@ -9,6 +9,7 @@
 <title>ReconBank</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<script src="fixeros-config.js"></script>
 <script src="fixeros-auth.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -813,8 +814,9 @@ body:not(.auth-ok) { visibility: hidden; }
 
 <script>
 // ── CONFIGURAÇÃO FIXA (URLs públicos; nunca chaves) ──
-const GAS_URL  = 'https://script.google.com/macros/s/AKfycbxZMSlByXQ4b6kOLRluCyGNJ-G0ttntWoJZv1ZgS3cC4V5NlJ-XDMAO8Hn1BNZcL27Icg/exec';
-const AUTH_URL = 'https://script.google.com/macros/s/AKfycbxutHxDOeP4sYDyYLRk5psXl8ZXfWm-_sO09w_CZClBhwCvel7qHR04TbLOXpJFdT9wDA/exec';
+// B5: a retaguarda vem do directório (fixeros-auth.js)
+const GAS_URL  = (typeof FixerDir !== 'undefined') ? FixerDir.modulo('reconbank', 'https://script.google.com/macros/s/AKfycbxZMSlByXQ4b6kOLRluCyGNJ-G0ttntWoJZv1ZgS3cC4V5NlJ-XDMAO8Hn1BNZcL27Icg/exec') : 'https://script.google.com/macros/s/AKfycbxZMSlByXQ4b6kOLRluCyGNJ-G0ttntWoJZv1ZgS3cC4V5NlJ-XDMAO8Hn1BNZcL27Icg/exec';
+const AUTH_URL = (typeof FixerDir !== 'undefined') ? FixerDir.auth() : 'https://script.google.com/macros/s/AKfycbxutHxDOeP4sYDyYLRk5psXl8ZXfWm-_sO09w_CZClBhwCvel7qHR04TbLOXpJFdT9wDA/exec';
 const EMP_KEY  = 'reconbank_empresa';
 
 // ── ESTADO ──
